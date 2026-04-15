@@ -1056,16 +1056,21 @@ function renderPCharts(){
       }).filter(Boolean);
       ttip.innerHTML=`<b style="color:#fff">3/${rangeFrom+di}일 소계: ${v}개</b><br>${lines.join('<br>')||'0개'}`;
     } else {
-      /* 일반 제품: 채널별 비율 추정 */
+      /* 채널별 실제 일별 데이터 */
       const di=+td.dataset.di;
-      const total31=(PROD_DAILY_ALL[prod]||[]).reduce((a,b)=>a+b,0)||1;
-      const malls=Object.keys(CROSS_DATA).filter(m=>CROSS_DATA[m]?.[prod]>0);
-      const lines=malls.map(m=>{
-        const mallTotal=CROSS_DATA[m][prod]||0;
-        const est=total31>0?Math.round(v*mallTotal/total31):0;
-        return est>0?`<span style="color:#93c5fd">${m}</span>: 약 ${est}개`:'';
-      }).filter(Boolean);
-      ttip.innerHTML=`<b style="color:#fff">3/${rangeFrom+di}일 · ${prod.length>16?prod.slice(0,16)+'…':prod}: ${v}개</b><br>${lines.length?lines.join('<br>'):'데이터 없음'}`;
+      const absIdx=rangeFrom-1+di;
+      const prodMalls=MALL_DAILY[prod]||{};
+      const lines=Object.entries(prodMalls)
+        .map(([m,arr])=>{const mv=arr[absIdx]||0;return mv>0?`<span style="color:#93c5fd">${m}</span>: ${mv}개`:''})
+        .filter(Boolean);
+      /* 채널별 실제 일별 데이터 */
+      const di=+td.dataset.di;
+      const absIdx=rangeFrom-1+di;
+      const prodMalls=MALL_DAILY[prod]||{};
+      const lines=Object.entries(prodMalls)
+        .map(([m,arr])=>{const mv=arr[absIdx]||0;return mv>0?`<span style="color:#93c5fd">${m}</span>: ${mv}개`:''})
+        .filter(Boolean);
+      ttip.innerHTML=`<b style="color:#fff">3/${rangeFrom+di}일 · ${prod.length>16?prod.slice(0,16)+'…':prod}: ${v}개</b><br>${lines.length?lines.join('<br>'):'채널 데이터 없음'}`;
     }
     ttip.style.display='block';
   });
