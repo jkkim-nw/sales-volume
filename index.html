@@ -625,7 +625,7 @@ function initCross(){
   cxRenderPlist('');
 }
 function cxClearGroups(){GRP_KEYS.forEach(k=>{cxGroups[k]=[];});cxRenderPlist(document.getElementById('cx-search').value);cxRenderGroupSummary();renderCross();}
-function cxAssignGroup(prod,key){GRP_KEYS.forEach(k=>{cxGroups[k]=cxGroups[k].filter(p=>p!==prod);});if(key)cxGroups[key].push(prod);cxRenderPlist(document.getElementById('cx-search').value);cxRenderGroupSummary();renderCross();}
+function cxAssignGroup(prod,key){GRP_KEYS.forEach(k=>{cxGroups[k]=cxGroups[k].filter(p=>p!==prod);});if(key)cxGroups[key].push(prod);cxRenderPlist(document.getElementById('cx-search').value);cxRenderChips();cxRenderGroupSummary();renderCross();}
 function cxGetGroup(prod){return GRP_KEYS.find(k=>cxGroups[k].includes(prod))||null;}
 function cxRenderGroupSummary(){
   const wrap=document.getElementById('cx-groups-wrap');
@@ -668,8 +668,29 @@ function cxToggleP(name){
 }
 function cxRenderChips(){
   const el=document.getElementById('cx-prod-chips');
-  el.innerHTML=cxSelP.length===0?'<span style="font-size:12px;color:var(--text3)">아래 목록에서 선택하세요</span>'
-    :cxSelP.map(n=>`<span class="chip selected">${n.length>14?n.slice(0,14)+'…':n}<span style="margin-left:4px;cursor:pointer;font-weight:600" onclick="event.stopPropagation();cxToggleP('${n.replace(/'/g,"\\'")}')">×</span></span>`).join('');
+  if(cxSelP.length===0){
+    el.innerHTML='<span style="font-size:12px;color:var(--text3)">아래 목록에서 선택하세요</span>';
+    return;
+  }
+  el.innerHTML=cxSelP.map(n=>{
+    const curGrp=cxGetGroup(n);
+    const col=curGrp?GRP_CLRS[curGrp]:'#6b6a66';
+    const grpBadge=curGrp
+      ?`<span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;background:${col};color:#fff;font-size:9px;font-weight:700;margin-left:3px">${curGrp}</span>`
+      :'';
+    const grpBtns=cxSelP.length>=2
+      ?`<span style="display:inline-flex;gap:2px;margin-left:4px">`+GRP_KEYS.map(k=>{
+          const active=curGrp===k, c=GRP_CLRS[k];
+          return `<span onclick="event.stopPropagation();cxAssignGroup('${n.replace(/'/g,"\\'")}','${active?'':k}')"
+            style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer;
+            background:${active?c:c+'22'};color:${active?'#fff':c};border:1px solid ${c}55">${k}</span>`;
+        }).join('')+`</span>`
+      :'';
+    return `<span class="chip selected" style="display:inline-flex;align-items:center;gap:2px;margin-bottom:4px">
+      ${n.length>12?n.slice(0,12)+'…':n}${grpBadge}${grpBtns}
+      <span style="margin-left:4px;cursor:pointer;font-weight:600" onclick="event.stopPropagation();cxToggleP('${n.replace(/'/g,"\\'")}')">×</span>
+    </span>`;
+  }).join('');
 }
 function renderCross(){
   const area=document.getElementById('cx-result');
