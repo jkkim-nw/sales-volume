@@ -189,24 +189,21 @@ Chart.register(inlineBarLabelPlugin);
         <div id="wday-note" style="margin-top:14px;font-size:12px;color:var(--text2);line-height:1.8"></div>
       </div>
     </div>
-  </div>
-    <div class="card" style="margin-top:16px">
+    <div class="card" style="margin-top:16px;overflow-x:auto">
       <div class="card-title" id="trend-title">일별 판매량 추이</div>
-      <div style="position:relative;height:240px"><canvas id="trendChart"></canvas></div>
+      <div id="trendChart-wrap" style="min-width:600px;position:relative;height:240px"><canvas id="trendChart"></canvas></div>
     </div>
   </div>
 
   <!-- PRODUCTS -->
   <div id="panel-products" class="panel">
-    <div class="grid2" style="margin-bottom:20px">
-      <div>
-        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">제품 선택</div>
-        <div class="chip-bar" id="sel-chips"><span style="font-size:12px;color:var(--text3)">아래 목록에서 선택하세요</span></div>
-        <input class="search-input" type="text" placeholder="제품명 검색..." oninput="filterP(this.value)">
-        <div class="plist" id="plist"></div>
-      </div>
-      <div id="pchart-wrap"><div class="empty">제품을 선택하면<br>일별 추이가 표시됩니다</div></div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">제품 선택</div>
+      <div class="chip-bar" id="sel-chips"><span style="font-size:12px;color:var(--text3)">아래 목록에서 선택하세요</span></div>
+      <input class="search-input" type="text" placeholder="제품명 검색..." oninput="filterP(this.value)">
+      <div class="plist" id="plist"></div>
     </div>
+    <div id="pchart-wrap" style="margin-bottom:16px"><div class="empty">제품을 선택하면<br>일별 추이가 표시됩니다</div></div>
     <div id="ptable-area"></div>
   </div>
 
@@ -219,26 +216,26 @@ Chart.register(inlineBarLabelPlugin);
 
   <!-- CROSS: 제품 × 채널 -->
   <div id="panel-cross" class="panel">
-    <div class="grid2" style="margin-bottom:20px">
-      <div>
-        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">제품 선택 (복수 가능)</div>
-        <div class="chip-bar" id="cx-prod-chips"><span style="font-size:12px;color:var(--text3)">아래 목록에서 선택하세요</span></div>
-        <input class="search-input" id="cx-search" type="text" placeholder="제품명 검색..." oninput="cxFilterP(this.value)">
-        <div class="plist" id="cx-plist"></div>
-      </div>
-      <div>
-        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">채널 선택 (복수 가능)</div>
-        <div class="chip-bar" id="cx-mall-chips"></div>
-        <!-- 그룹 설정 -->
-        <div id="cx-group-section" style="display:none;margin-top:20px">
-          <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">
-            그룹 설정 <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--text3)">· 제품 옆 A–E 버튼으로 배정</span>
-          </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-            <button onclick="cxClearGroups()" style="font-family:'Noto Sans KR',sans-serif;font-size:11px;padding:4px 12px;border:1px solid var(--border2);border-radius:20px;background:transparent;color:var(--text2);cursor:pointer">초기화</button>
-          </div>
-          <div id="cx-groups-wrap"></div>
+    <!-- 채널 선택 (위) -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">채널 선택 (복수 가능)</div>
+      <div class="chip-bar" id="cx-mall-chips"></div>
+    </div>
+    <!-- 제품 선택 (아래) + 그룹 설정 -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">제품 선택 (복수 가능)</div>
+      <div class="chip-bar" id="cx-prod-chips"><span style="font-size:12px;color:var(--text3)">아래 목록에서 선택하세요</span></div>
+      <input class="search-input" id="cx-search" type="text" placeholder="제품명 검색..." oninput="cxFilterP(this.value)">
+      <div class="plist" id="cx-plist"></div>
+      <!-- 그룹 설정 -->
+      <div id="cx-group-section" style="display:none;margin-top:16px">
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">
+          그룹 설정 <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--text3)">· 제품 옆 A–E 버튼으로 배정</span>
         </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+          <button onclick="cxClearGroups()" style="font-family:'Noto Sans KR',sans-serif;font-size:11px;padding:4px 12px;border:1px solid var(--border2);border-radius:20px;background:transparent;color:var(--text2);cursor:pointer">초기화</button>
+        </div>
+        <div id="cx-groups-wrap"></div>
       </div>
     </div>
     <div id="cx-result"></div>
