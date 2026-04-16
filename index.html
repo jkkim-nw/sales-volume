@@ -222,6 +222,7 @@ Chart.register(inlineBarLabelPlugin);
     <!-- 채널 선택 (위) -->
     <div style="margin-bottom:16px">
       <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">채널 선택 (복수 가능)</div>
+      <input class="search-input" type="text" id="cx-mall-search" placeholder="채널명 검색..." oninput="filterCxMall(this.value)" style="margin-bottom:8px">
       <div class="chip-bar" id="cx-mall-chips"></div>
     </div>
     <!-- 제품 선택 (아래) + 그룹 설정 -->
@@ -607,7 +608,16 @@ function renderMallChips(q){
     });
   mallsInited=true;
 }
-function filterMall(q){ renderMallChips(q); }
+function filterMall(q){
+  document.querySelectorAll('#mall-chips .chip').forEach(chip=>{
+    chip.style.display=(!q||chip.textContent.includes(q))?'':'none';
+  });
+}
+function filterCxMall(q){
+  document.querySelectorAll('#cx-mall-chips .chip').forEach(chip=>{
+    chip.style.display=(!q||chip.textContent.includes(q))?'':'none';
+  });
+}
 function renderMallChart(){
   const area=document.getElementById('mall-chart-area');
   const clrs=['#2563eb','#16a34a','#c2410c','#9333ea'];
