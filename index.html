@@ -248,7 +248,8 @@ Chart.register(inlineBarLabelPlugin);
 
 <script>
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbwQW2eVJ31I57JhrYEsQ0A-5nxHfSRcTG6agbfMwRxP8rMatwSchKSOG5u00cg2qE2d/exec';
+const SHEETS_ID = '1tkD3S_x_Dr-FEdWnBXk8TbgJcr-g4Vl6TeFpg--iGRI';
+const SHEETS_KEY = 'AIzaSyDcMgI3oW2OksnK4bShb8ZcFzlNtFBVV0A';
 
 /* ── 상태 ── */
 let currentYM = '2026-03';
@@ -268,13 +269,7 @@ let CROSS_DATA={};     // {판매처: {상품명: total}}
 let DAILY_ALL=[];      // [d1,d2,...] 전체 일별 합계
 
 /* ── 데이터 로딩 ── */
-/* ── 날짜 범위 선택 ── */
-function setQuickRange(from, to){
-  document.getElementById('date-from').value = from;
-  document.getElementById('date-to').value = to;
-  loadData();
-}
-
+/* ── 데이터 로딩 (Sheets API 직접 호출) ── */
 async function loadData(){
   const from = document.getElementById('date-from').value;
   const to   = document.getElementById('date-to').value;
@@ -282,22 +277,26 @@ async function loadData(){
   if(!from || !to){ alert('날짜를 선택해주세요'); return; }
   if(from > to){ alert('시작일이 종료일보다 늦을 수 없어요'); return; }
 
+  currentYM = from.slice(0,7);
+
   document.getElementById('loading-badge').style.display='inline';
   document.getElementById('range-badge').textContent = `${from} – ${to} 로딩 중...`;
 
   try {
-    const url = API_URL + '?from=' + from + '&to=' + to;
-    const res = await fetch(url);
+    /* 같은 GitHub Pages 도메인의 data.json 읽기 */
+    const res = await fetch('./data.json');
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
 
-    if(json.error) throw new Error(json.error);
-
-    RAW = json.rows.map(r=>({
-      date: r[0],
-      prod: r[1],
-      mall: r[2],
-      qty:  +r[3]
-    }));
+    /* from~to 범위 필터링 */
+    RAW = json.rows
+      .filter(r => r[0] && r[0] >= from && r[0] <= to && +r[3] > 0)
+      .map(r => ({
+        date: r[0],
+        prod: r[1],
+        mall: r[2],
+        qty:  +r[3]
+      }));
 
     buildDerived();
     resetSelections();
@@ -308,14 +307,19 @@ async function loadData(){
 
   } catch(err) {
     document.getElementById('loading-badge').style.display='none';
-    document.getElementById('range-badge').textContent = '오류 발생';
-    alert('데이터 로딩 실패: ' + err.message);
+    document.getElementById('range-badge').textContent = '오류: ' + err.message;
+    console.error('loadData error:', err);
   }
-
+}
+function setQuickRange(from, to){
+  document.getElementById('date-from').value = from;
+  document.getElementById('date-to').value = to;
+  loadData();
+}
 
 function buildDerived(){
-  /* 해당 월의 날짜 목록 */
-  const daySet = new Set(RAW.map(r=>r.date.slice(8,10)));
+  /* 전체 날짜 목록 (yyyy-mm-dd 형식, 정렬) */
+  const daySet = new Set(RAW.map(r=>r.date));
   DATES = [...daySet].sort();
 
   const dayIdx = Object.fromEntries(DATES.map((d,i)=>[d,i]));
@@ -327,7 +331,7 @@ function buildDerived(){
   DAILY_ALL = Array(n).fill(0);
 
   RAW.forEach(({date,prod,mall,qty})=>{
-    const di = dayIdx[date.slice(8,10)];
+    const di = dayIdx[date];
     if(di===undefined) return;
 
     /* PROD_DAILY */
@@ -369,14 +373,15 @@ function renderOverview(){
   const avg=Math.round(total/days);
   const peakIdx=DAILY_ALL.indexOf(Math.max(...DAILY_ALL));
   const peakDay=DATES[peakIdx];
-  const [y,mo] = currentYM.split('-');
+  const fromVal = document.getElementById('date-from').value;
+  const toVal   = document.getElementById('date-to').value;
 
   document.getElementById('m-total').textContent=total.toLocaleString();
   document.getElementById('m-days').textContent=`${days}일 기준`;
   document.getElementById('m-avg').textContent=avg.toLocaleString();
-  document.getElementById('m-peak').textContent=`${parseInt(mo)}/${parseInt(peakDay)}`;
+  document.getElementById('m-peak').textContent=peakDay ? peakDay.slice(5).replace('-','/') : '-';
   document.getElementById('m-peak-val').textContent=`${DAILY_ALL[peakIdx]}개`;
-  document.getElementById('top20-title').textContent=`TOP 20 제품 · ${y}년 ${parseInt(mo)}월`;
+  document.getElementById('top20-title').textContent=`TOP 20 제품 · ${fromVal}~${toVal}`;
 
   /* 입점 채널 수 */
   const mallCount = Object.keys(MALL_MAP).length;
@@ -397,7 +402,7 @@ function renderOverview(){
   const wdayMap={0:'일',1:'월',2:'화',3:'수',4:'목',5:'금',6:'토'};
   const ws={월:[],화:[],수:[],목:[],금:[],토:[],일:[]};
   DATES.forEach((d,i)=>{
-    const dt=new Date(currentYM.slice(0,4),parseInt(currentYM.slice(5,7))-1,parseInt(d));
+    const dt=new Date(d); // "2026-03-15" 형식 직접 파싱
     ws[wdayMap[dt.getDay()]].push(DAILY_ALL[i]);
   });
   const order=['월','화','수','목','금','토','일'];
@@ -417,9 +422,9 @@ function renderOverview(){
 /* ── TREND ── */
 function renderTrend(){
   if(!DAILY_ALL.length) return;
-  const labels=DATES.map(d=>parseInt(d)+'');
+  const labels=DATES.map(d=>d.slice(5));
   const maxV=Math.max(...DAILY_ALL);
-  document.getElementById('trend-title').textContent=`${currentYM.slice(0,4)}년 ${parseInt(currentYM.slice(5,7))}월 일별 판매량`;
+  document.getElementById('trend-title').textContent=`일별 판매량 (${document.getElementById('date-from').value}~${document.getElementById('date-to').value})`;
   if(tChart){
     tChart.data.labels=labels;
     tChart.data.datasets[0].data=DAILY_ALL;
@@ -429,7 +434,7 @@ function renderTrend(){
     tChart=new Chart(document.getElementById('trendChart'),{type:'bar',
       data:{labels,datasets:[{label:'판매량',data:DAILY_ALL,backgroundColor:DAILY_ALL.map(v=>v===maxV?'#c2410c':'#93c5fd'),borderRadius:4,borderSkipped:false}]},
       options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>`${parseInt(currentYM.slice(5,7))}/${i[0].label}일`,label:i=>`${i.raw}개`}}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>`${i[0].label}`,label:i=>`${i.raw}개`}}},
         scales:{x:{ticks:{autoSkip:false,maxRotation:0,font:{size:10}},grid:{display:false}},y:{min:0,grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11}}}}}
     });
   }
@@ -468,7 +473,7 @@ function renderPCharts(){
   const cw=document.getElementById('pchart-wrap'),ta=document.getElementById('ptable-area');
   if(selP.length===0){cw.innerHTML='<div class="empty">제품을 선택하면<br>일별 추이가 표시됩니다</div>';ta.innerHTML='';if(pChart){pChart.destroy();pChart=null;}return;}
   const n=DATES.length;
-  const labels=DATES.map(d=>parseInt(d)+'');
+  const labels=DATES.map(d=>d.slice(5));
   const clrs=['#2563eb','#16a34a','#c2410c','#9333ea','#ca8a04','#0891b2'];
   const dsets=selP.map((p,i)=>({
     label:p,data:PROD_DAILY[p]||Array(n).fill(0),
@@ -481,7 +486,7 @@ function renderPCharts(){
   pChart=new Chart(document.getElementById('pChart'),{type:'line',
     data:{labels,datasets:dsets},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>`${parseInt(currentYM.slice(5,7))}/${i[0].label}일`}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>`${i[0].label}`}}},
       scales:{x:{ticks:{font:{size:10},maxRotation:0},grid:{display:false}},y:{min:0,ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,0.05)'}}}}
   });
 
@@ -541,9 +546,8 @@ function renderPCharts(){
     dragEnd={di:+td.dataset.di}; highlight();
     const minDi=Math.min(dragStart.di,dragEnd.di),maxDi=Math.max(dragStart.di,dragEnd.di);
     let sum=0; tbl.querySelectorAll('.dtcell').forEach(td=>{if(+td.dataset.di>=minDi&&+td.dataset.di<=maxDi)sum+=+td.dataset.v||0;});
-    const mo=parseInt(currentYM.slice(5,7));
     badge.style.display='inline-block';
-    badge.textContent=`${mo}/${parseInt(DATES[minDi])}–${mo}/${parseInt(DATES[maxDi])} 합산: ${sum}개`;
+    badge.textContent=`${DATES[minDi].slice(5)}~${DATES[maxDi].slice(5)} 합산: ${sum}개`;
   });
   document.addEventListener('mouseup',()=>{isDragging=false;});
   document.getElementById('ptable-scroll').addEventListener('mouseleave',()=>{if(!isDragging){clearDrag();}});
@@ -561,8 +565,7 @@ function renderPCharts(){
   tbl.addEventListener('mouseover',e=>{
     const td=e.target.closest('.dtcell'); if(!td||isDragging)return;
     const v=+td.dataset.v||0, prod=td.dataset.prod, di=+td.dataset.di;
-    const mo=parseInt(currentYM.slice(5,7));
-    const dayLabel=`${mo}/${parseInt(DATES[di])}일`;
+    const dayLabel=DATES[di].slice(5);
     if(prod==='__subtotal__'){
       const lines=selP.map(p=>{const pv=(PROD_DAILY[p]||[])[di]||0;return pv>0?`<span style="color:#93c5fd">${p.length>18?p.slice(0,18)+'…':p}</span>: ${pv}개`:''}).filter(Boolean);
       ttip.innerHTML=`<b style="color:#fff">${dayLabel} 소계: ${v}개</b><br>${lines.join('<br>')||'0개'}`;
