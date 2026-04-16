@@ -152,6 +152,8 @@ Chart.register(inlineBarLabelPlugin);
     style="font-family:'DM Mono',monospace;font-size:13px;padding:5px 8px;border:1px solid var(--border2);border-radius:7px;background:var(--surface);color:var(--text);outline:none">
   <button class="apply-btn" onclick="loadData()">불러오기</button>
   <div class="quick-btns">
+    <button class="qbtn" onclick="setQuickRange('2024-01-01','2024-12-31')">2024 전체</button>
+    <button class="qbtn" onclick="setQuickRange('2025-01-01','2025-12-31')">2025 전체</button>
     <button class="qbtn" onclick="setQuickRange('2026-01-01','2026-01-31')">26년 1월</button>
     <button class="qbtn" onclick="setQuickRange('2026-02-01','2026-02-28')">26년 2월</button>
     <button class="qbtn" onclick="setQuickRange('2026-03-01','2026-03-31')">26년 3월</button>
@@ -285,14 +287,18 @@ async function loadData(){
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
 
+    /* 압축 형식 해제: prods/malls 인덱스 → 실제 이름 */
+    const prods = json.prods;
+    const malls = json.malls;
+
     /* from~to 범위 필터링 */
     RAW = json.rows
-      .filter(r => r[0] && r[0] >= from && r[0] <= to && +r[3] > 0)
+      .filter(r => r[0] >= from && r[0] <= to && r[3] > 0)
       .map(r => ({
         date: r[0],
-        prod: r[1],
-        mall: r[2],
-        qty:  +r[3]
+        prod: prods[r[1]],
+        mall: malls[r[2]],
+        qty:  r[3]
       }));
 
     buildDerived();
