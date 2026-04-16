@@ -356,10 +356,13 @@ function buildDerived(){
 }
 
 function resetSelections(){
-  selP=[]; selM=[]; tChart=null; pChart=null;
-  mallsInited=false;
-  cxSelP=[]; cxSelM=[]; cxChart=null; cxInited=false;
+  selP=[]; selM=[]; mallsInited=false;
+  cxSelP=[]; cxSelM=[]; cxInited=false;
   GRP_KEYS.forEach(k=>cxGroups[k]=[]);
+  /* 차트 destroy */
+  if(tChart){ tChart.destroy(); tChart=null; }
+  if(pChart){ pChart.destroy(); pChart=null; }
+  if(cxChart){ cxChart.destroy(); cxChart=null; }
   document.getElementById('mall-chips').innerHTML='';
   document.getElementById('cx-mall-chips').innerHTML='';
 }
