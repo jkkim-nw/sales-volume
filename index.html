@@ -211,7 +211,8 @@ Chart.register(inlineBarLabelPlugin);
 
   <!-- MALLS -->
   <div id="panel-malls" class="panel">
-    <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">채널 선택 (복수 가능)</div>
+    <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">채널 선택 (복수 가능)</div>
+    <input class="search-input" type="text" id="mall-search" placeholder="채널명 검색..." oninput="filterMall(this.value)" style="margin-bottom:8px">
     <div class="chip-bar" id="mall-chips"></div>
     <div class="card" id="mall-chart-area"><div class="empty">채널을 선택하세요</div></div>
   </div>
@@ -385,7 +386,7 @@ function renderOverview(){
   document.getElementById('m-total').textContent=total.toLocaleString();
   document.getElementById('m-days').textContent=`${days}일 기준`;
   document.getElementById('m-avg').textContent=avg.toLocaleString();
-  document.getElementById('m-peak').textContent=peakDay ? peakDay.slice(5).replace('-','/') : '-';
+  document.getElementById('m-peak').textContent=peakDay ? peakDay.replace(/-/g,'/') : '-';
   document.getElementById('m-peak-val').textContent=`${DAILY_ALL[peakIdx]}개`;
   document.getElementById('top20-title').textContent=`TOP 20 제품 · ${fromVal}~${toVal}`;
 
@@ -440,7 +441,7 @@ function renderTrend(){
     tChart=new Chart(document.getElementById('trendChart'),{type:'bar',
       data:{labels,datasets:[{label:'판매량',data:DAILY_ALL,backgroundColor:DAILY_ALL.map(v=>v===maxV?'#c2410c':'#93c5fd'),borderRadius:4,borderSkipped:false}]},
       options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>`${i[0].label}`,label:i=>`${i.raw}개`}}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>`${DATES[i[0].dataIndex]||i[0].label}`,label:i=>`${i.raw}개`}}},
         scales:{x:{ticks:{autoSkip:false,maxRotation:0,font:{size:10}},grid:{display:false}},y:{min:0,grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11}}}}}
     });
   }
@@ -492,7 +493,7 @@ function renderPCharts(){
   pChart=new Chart(document.getElementById('pChart'),{type:'line',
     data:{labels,datasets:dsets},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>`${i[0].label}`}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>`${DATES[i[0].dataIndex]||i[0].label}`}}},
       scales:{x:{ticks:{font:{size:10},maxRotation:0},grid:{display:false}},y:{min:0,ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,0.05)'}}}}
   });
 
@@ -589,19 +590,24 @@ renderPlist(''); renderSelChips();
 
 /* ── MALLS ── */
 function initMalls(){
+  renderMallChips('');
+  renderMallChart();
+}
+function renderMallChips(q){
   const el=document.getElementById('mall-chips');
-  if(!el.innerHTML){
-    Object.keys(MALL_MAP).sort().forEach(mall=>{
+  el.innerHTML='';
+  Object.keys(MALL_MAP).sort()
+    .filter(mall=>!q||mall.includes(q))
+    .forEach(mall=>{
       const s=document.createElement('span');
       s.className='chip'+(selM.includes(mall)?' selected':'');
       s.textContent=mall;
       s.onclick=()=>{const i=selM.indexOf(mall);if(i>=0)selM.splice(i,1);else selM.push(mall);s.classList.toggle('selected',selM.includes(mall));renderMallChart();};
       el.appendChild(s);
     });
-    mallsInited=true;
-  }
-  renderMallChart();
+  mallsInited=true;
 }
+function filterMall(q){ renderMallChips(q); }
 function renderMallChart(){
   const area=document.getElementById('mall-chart-area');
   const clrs=['#2563eb','#16a34a','#c2410c','#9333ea'];
