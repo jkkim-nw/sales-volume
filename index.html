@@ -402,7 +402,6 @@ function resetSelections(){
   selP=[]; selM=[]; mallsInited=false;
   cxSelP=[]; cxSelM=[]; cxInited=false;
   GRP_KEYS.forEach(k=>cxGroups[k]=[]);
-  /* 차트 destroy */
   if(tChart){ tChart.destroy(); tChart=null; }
   if(pChart){ pChart.destroy(); pChart=null; }
   if(cxChart){ cxChart.destroy(); cxChart=null; }
@@ -635,7 +634,12 @@ function initMalls(){
 function renderMallChips(q){
   const el=document.getElementById('mall-chips');
   el.innerHTML='';
-  Object.keys(MALL_MAP).sort()
+  Object.keys(MALL_MAP)
+    .sort((a,b)=>{
+      const ta=Object.values(MALL_MAP[a]||{}).reduce((s,v)=>s+v,0);
+      const tb=Object.values(MALL_MAP[b]||{}).reduce((s,v)=>s+v,0);
+      return tb-ta;
+    })
     .filter(mall=>!q||mall.includes(q))
     .forEach(mall=>{
       const s=document.createElement('span');
@@ -677,7 +681,13 @@ function renderMallChart(){
 function initCross(){
   if(cxInited)return; cxInited=true;
   const mel=document.getElementById('cx-mall-chips');
-  Object.keys(CROSS_DATA).sort().forEach(mall=>{
+  Object.keys(CROSS_DATA)
+    .sort((a,b)=>{
+      const ta=Object.values(CROSS_DATA[a]||{}).reduce((s,v)=>s+v,0);
+      const tb=Object.values(CROSS_DATA[b]||{}).reduce((s,v)=>s+v,0);
+      return tb-ta;
+    })
+    .forEach(mall=>{
     const s=document.createElement('span'); s.className='chip'; s.textContent=mall;
     s.onclick=()=>{const i=cxSelM.indexOf(mall);if(i>=0)cxSelM.splice(i,1);else cxSelM.push(mall);s.classList.toggle('selected',cxSelM.includes(mall));renderCross();};
     mel.appendChild(s);
